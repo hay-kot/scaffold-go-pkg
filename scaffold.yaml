@@ -1,15 +1,15 @@
 messages:
   pre: |
-    # Go urfave/cli/v2 Project Scaffold
+    # Go Project Scaffold
 
-    Generate boilerplate code for a new urfave/cli/v2 project.
+    Generate boilerplate for a new go Package with minimal opinions
 
   post: |
     # Get Started
 
     ```sh
     cd {{ .ProjectKebab }}
-    task run -- hello
+    task pr
     ```
 skip:
   - "*.goreleaser.yaml"
@@ -17,7 +17,7 @@ skip:
 questions:
   - name: "gomod"
     prompt:
-      message: "Go Module Path"
+      message: "Go Module Path (eg. github.com/username/project)"
   - name: "full_name"
     prompt:
       message: "Developer's full name"
