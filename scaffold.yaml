@@ -1,0 +1,38 @@
+messages:
+  pre: |
+    # Go urfave/cli/v2 Project Scaffold
+
+    Generate boilerplate code for a new urfave/cli/v2 project.
+
+  post: |
+    # Get Started
+
+    ```sh
+    cd {{ .ProjectKebab }}
+    task run -- hello
+    ```
+skip:
+  - "*.goreleaser.yaml"
+  - "*taskfile.yml"
+questions:
+  - name: "gomod"
+    prompt:
+      message: "Go Module Path"
+  - name: "full_name"
+    prompt:
+      message: "Developer's full name"
+    required: true
+  - name: "description"
+    prompt:
+      message: "Description of the project"
+    required: true
+  - name: "open_source_license"
+    prompt:
+      message: "License of the project"
+      default: "MIT license"
+      options:
+        - "MIT license"
+        - "BSD license"
+        - "ISC license"
+        - "Apache Software License 2.0"
+        - "GNU General Public License v3"
