@@ -27,7 +27,6 @@ questions:
   - name: "enable_renovate"
     prompt:
       confirm: "Enable Renovate?"
-      message: "Enable Renovate?"
       description: "Automatically update dependencies, via Renovate"
   - name: "open_source_license"
     prompt:
