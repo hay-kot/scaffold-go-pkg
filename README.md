@@ -7,4 +7,4 @@ This is a scaffold for a new Go Package.
 - Taskfile for common tasks
 - Renovate for dependency updates
 - GitHub Actions for CI/CD (Test and Lint)
-- Releases with Go Releaser
+- Release Drafter for automated release notes
