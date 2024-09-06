@@ -45,5 +45,4 @@ features:
       - "**/renovate.json"
 
 skip:
-  - "*.goreleaser.yaml"
-  - "*taskfile.yml"
+  - "*Taskfile.yml"

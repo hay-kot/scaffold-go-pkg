@@ -23,7 +23,7 @@ tasks:
   fmt:
     desc: Runs go fmt on the backend
     cmds:
-      - gofumpt . -w
+      - gofumpt -w .
 
   tidy:
     desc: Runs go mod tidy on the backend
