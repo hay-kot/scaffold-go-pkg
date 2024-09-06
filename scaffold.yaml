@@ -14,21 +14,33 @@ messages:
     ```
 questions:
   - name: "gomod"
+    group: "project"
     prompt:
       message: "Go Module Path (eg. github.com/username/project)"
   - name: "full_name"
+    group: "project"
     prompt:
       message: "Developer's full name"
     required: true
   - name: "description"
+    group: "project"
     prompt:
       message: "Description of the project"
     required: true
   - name: "enable_renovate"
+    group: "options"
     prompt:
       confirm: "Enable Renovate?"
       description: "Automatically update dependencies, via Renovate"
+      default: true
+  - name: "enable_release_drafter"
+    group: "options"
+    prompt:
+      confirm: "Enable Release Draft"
+      description: "Automatically draft release notes, via Release Drafter"
+      default: true
   - name: "open_source_license"
+    group: "license"
     prompt:
       message: "License of the project"
       default: "MIT license"
@@ -43,6 +55,9 @@ features:
   - value: "{{ .Scaffold.enable_renovate }}"
     globs:
       - "**/renovate.json"
+  - value: "{{ .Scaffold.enable_release_drafter }}"
+    globs:
+      - "**/*release-drafter.yml"
 
 skip:
   - "*Taskfile.yml"
