@@ -2,13 +2,19 @@
 
 {{ .Scaffold.description }}
 
-## Installation
+[Go Reference](https://pkg.go.dev/{{ .Scaffold.gomod }})
+
+## Install
 
 ```bash
-go install https://{{ .Scaffold.gomod }}
+go get -u {{ .Scaffold.gomod }}
 ```
 
-## Usage
+## Features
 
-TODO
+// TODO: Add Features
+
+## Examples
+
+// TODO: Add Examples
 
