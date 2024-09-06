@@ -20,6 +20,11 @@ tasks:
       - go test -race -coverprofile=coverage.out -covermode=atomic ./... -v -cover
     silent: true
 
+  fmt:
+    desc: Runs go fmt on the backend
+    cmds:
+      - gofumpt . -w
+
   tidy:
     desc: Runs go mod tidy on the backend
     cmds:
@@ -33,6 +38,7 @@ tasks:
   pr:
     desc: Runs all go test and lint related tasks for PRs
     cmds:
+      - task: fmt
       - task: tidy
       - task: lint
       - task: test
