@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://hay-kot.github.io/scaffold/schema.json
 messages:
   pre: |
     # Go Project Scaffold
@@ -11,9 +12,6 @@ messages:
     cd {{ .ProjectKebab }}
     task pr
     ```
-skip:
-  - "*.goreleaser.yaml"
-  - "*taskfile.yml"
 questions:
   - name: "gomod"
     prompt:
@@ -26,6 +24,11 @@ questions:
     prompt:
       message: "Description of the project"
     required: true
+  - name: "enable_renovate"
+    prompt:
+      confirm: "Enable Renovate?"
+      message: "Enable Renovate?"
+      description: "Automatically update dependencies, via Renovate"
   - name: "open_source_license"
     prompt:
       message: "License of the project"
@@ -36,3 +39,12 @@ questions:
         - "ISC license"
         - "Apache Software License 2.0"
         - "GNU General Public License v3"
+
+features:
+  - value: "{{ .Scaffold.enable_renovate }}"
+    globs:
+      - "**/renovate.json"
+
+skip:
+  - "*.goreleaser.yaml"
+  - "*taskfile.yml"
