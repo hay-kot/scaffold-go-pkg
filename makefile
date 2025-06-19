@@ -1,3 +1,3 @@
 .PHONY: test
 test:
-	scaffold --output-dir=./test new ./
+	scaffold new --output-dir=./test ./
