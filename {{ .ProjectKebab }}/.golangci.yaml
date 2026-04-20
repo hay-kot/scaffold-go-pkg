@@ -25,13 +25,12 @@ linters:
     - unconvert
     - unused
     - whitespace
-    - zerologlint
   settings:
     depguard:
       rules:
         main:
           deny:
-            - pkg: io/util
+            - pkg: io/ioutil
               desc: |
                 Deprecated: As of Go 1.16, the same functionality is now provided by
                 package io or package os, and those implementations should be
@@ -44,9 +43,6 @@ linters:
     goconst:
       min-len: 5
       min-occurrences: 5
-    gocritic:
-      enabled-checks:
-        - ruleguard
     revive:
       confidence: 3
       severity: warning
@@ -69,9 +65,14 @@ linters:
 issues:
   fix: true
 formatters:
+  enable:
+    - gofumpt
   exclusions:
     generated: lax
     paths:
       - third_party$
       - builtin$
       - examples$
+  settings:
+    gofumpt:
+      extra-rules: false

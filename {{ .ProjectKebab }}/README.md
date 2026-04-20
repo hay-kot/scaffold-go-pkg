@@ -2,19 +2,14 @@
 
 {{ .Scaffold.description }}
 
-[Go Reference](https://pkg.go.dev/{{ .Scaffold.gomod }})
+[![Go Reference](https://pkg.go.dev/badge/{{ .Scaffold.gomod }}.svg)](https://pkg.go.dev/{{ .Scaffold.gomod }})
 
 ## Install
 
 ```bash
-go get -u {{ .Scaffold.gomod }}
+go get {{ .Scaffold.gomod }}
 ```
 
-## Features
+## Usage
 
-// TODO: Add Features
-
-## Examples
-
-// TODO: Add Examples
-
+TODO
