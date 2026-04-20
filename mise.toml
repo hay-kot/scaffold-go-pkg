@@ -1,0 +1,40 @@
+[tools]
+go = "latest"
+"github:hay-kot/scaffold" = "latest"
+
+[tasks.snapshot]
+description = "Render the test preset to stdout"
+run = 'scaffold new --output-dir=":memory:" --preset="test" --no-prompt --snapshot="stdout" ./'
+
+[tasks."test:snapshot"]
+description = "Diff the committed snapshot against a fresh render"
+shell = "bash -c"
+run = '''
+diff -u \
+    <(sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/DATE/g' snapshots/test.snapshot) \
+    <(scaffold new --output-dir=":memory:" --preset="test" --no-prompt --snapshot="stdout" ./ | sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/DATE/g')
+'''
+
+[tasks."test:snapshot:update"]
+description = "Regenerate the committed snapshot"
+run = 'scaffold new --output-dir=":memory:" --preset="test" --no-prompt --snapshot="stdout" ./ > snapshots/test.snapshot'
+
+[tasks."test:run"]
+description = "Render the test preset to /tmp and verify the package builds"
+run = '''
+rm -rf /tmp/scaffold-test/
+scaffold --log-level="debug" new --output-dir="/tmp/scaffold-test/" --preset="test" --no-prompt --run-hooks=always ./
+ls /tmp/scaffold-test/pkg-test/
+cd /tmp/scaffold-test/pkg-test && \
+    go mod tidy && \
+    go build ./... && \
+    go test ./...
+'''
+
+[tasks."update:deps"]
+description = "Refresh template Go deps (go.mod/go.sum) using scripts/update-deps.sh"
+run = "./scripts/update-deps.sh"
+
+[tasks."update:actions"]
+description = "Bump GitHub Action major versions using scripts/update-actions.sh"
+run = "./scripts/update-actions.sh"

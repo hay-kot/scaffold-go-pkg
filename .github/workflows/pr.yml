@@ -1,0 +1,22 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install tools
+        uses: jdx/mise-action@v2
+
+      - name: Run snapshot tests
+        run: mise run test:snapshot
+
+      - name: Run regular tests
+        run: mise run test:run

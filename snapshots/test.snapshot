@@ -1,0 +1,526 @@
+pkg-test:  (type=dir)
+	.editorconfig:  (type=file)
+		root = true
+		
+		[*]
+		charset = utf-8
+		end_of_line = lf
+		insert_final_newline = true
+		trim_trailing_whitespace = true
+		indent_style = space
+		indent_size = 2
+		
+		[*.go]
+		indent_style = tab
+		
+		[{Makefile,makefile,*.mk}]
+		indent_style = tab
+		
+		[*.md]
+		trim_trailing_whitespace = false
+		
+	.github:  (type=dir)
+		ISSUE_TEMPLATE:  (type=dir)
+			bug_report.yml:  (type=file)
+				---
+				name: Bug Report
+				description: "Submit a bug for the latest version"
+				title: "YOUR DESCRIPTIVE TITLE GOES HERE"
+				labels: ["bug", "triage"]
+				body:
+				  - type: checkboxes
+				    id: checks
+				    attributes:
+				      label: First Check
+				      description: |
+				        Please confirm and check all the following prior to submission. If you do not do this, your
+				        issue may be closed.
+				      options:
+				        - label: This is not a feature request.
+				          required: true
+				        - label: I added a very descriptive title to this issue (title field is above this).
+				          required: true
+				        - label: I used the GitHub search to find a similar issue and didn't find it.
+				          required: true
+				  - type: textarea
+				    id: description
+				    attributes:
+				      label: What is the issue you are experiencing?
+				      placeholder: A clear and concise description of what the bug is.
+				    validations:
+				      required: true
+				  - type: textarea
+				    id: reproduction
+				    attributes:
+				      label: Steps to Reproduce (or failing test case)
+				      placeholder: 1) ... 2) ... 3) ...
+				    validations:
+				      required: true
+				  - type: textarea
+				    id: version
+				    attributes:
+				      label: Package Version
+				      placeholder: e.g. v0.1.1
+				
+			feature_request.yml:  (type=file)
+				name: Feature Request
+				description: "Submit a new feature request"
+				title: "YOUR DESCRIPTIVE TITLE GOES HERE"
+				labels: ["feature", "triage"]
+				body:
+				  - type: checkboxes
+				    id: checks
+				    attributes:
+				      label: First Check
+				      description: |
+				        Please confirm and check all the following prior to submission. If you do not do this, your
+				        issue may be closed.
+				      options:
+				        - label: I used the GitHub search to find a similar requests and didn't find it.
+				          required: true
+				  - type: textarea
+				    id: problem
+				    attributes:
+				      label: Please provide a concise description of the problem that would be addressed by this feature.
+				    validations:
+				      required: true
+				  - type: textarea
+				    id: solution
+				    attributes:
+				      label: Please provide a concise description of the feature that would resolve your issue.
+				    validations:
+				      required: true
+				  - type: textarea
+				    id: considerations
+				    attributes:
+				      label: Please consider and list out some caveats or tradeoffs made in your design decision
+				    validations:
+				      required: true
+				  - type: checkboxes
+				    id: additional-information
+				    attributes:
+				      label: Additional Information
+				      options:
+				        - label: If this is accepted I'm willing to submit a PR to provide this feature
+				        - label: If this is accepted I'm willing to help maintain this feature
+				
+		PULL_REQUEST_TEMPLATE.md:  (type=file)
+			Fixes #
+			
+			## Purpose
+			
+			## Proposed Changes
+			
+			  -
+			  -
+			  -
+			
+			## Checklist
+			
+			- [ ] I have added tests that prove my fix is effective or that my feature works
+			- [ ] I have added necessary documentation (if appropriate)
+		workflows:  (type=dir)
+			partial-tests.yml:  (type=file)
+				name: Go Build/Test
+				
+				on:
+				  workflow_call:
+				
+				jobs:
+				  Go:
+				    runs-on: ubuntu-latest
+				    steps:
+				      - uses: actions/checkout@v5
+				
+				      - name: Install tools
+				        uses: jdx/mise-action@v2
+				
+				      - name: golangci-lint
+				        uses: golangci/golangci-lint-action@v9
+				        with:
+				          version: latest
+				          args: --timeout=6m
+				
+				      - name: Build
+				        run: go build ./...
+				
+				      - name: Test
+				        run: go test ./... -race
+				
+			pr.yml:  (type=file)
+				name: pr
+				
+				on:
+				  push:
+				    branches:
+				      - main
+				  pull_request:
+				    branches:
+				      - main
+				
+				jobs:
+				  backend-tests:
+				    name: "Go Build/Test"
+				    uses: ./.github/workflows/partial-tests.yml
+				
+			publish.yml:  (type=file)
+				name: Release
+				
+				permissions:
+				  contents: write
+				
+				on:
+				  workflow_dispatch:
+				    inputs:
+				      semverbump:
+				        description: "Which version to bump by"
+				        required: true
+				        default: "patch"
+				        type: choice
+				        options:
+				          - patch
+				          - minor
+				          - major
+				
+				jobs:
+				  backend-tests:
+				    name: "Go Build/Test"
+				    uses: ./.github/workflows/partial-tests.yml
+				
+				  tag:
+				    name: "Publish Tag"
+				    runs-on: ubuntu-latest
+				    needs:
+				      - backend-tests
+				    steps:
+				      - uses: actions/checkout@v6
+				
+				      - uses: actions-ecosystem/action-get-latest-tag@v1
+				        id: get-latest-tag
+				
+				      - uses: actions-ecosystem/action-bump-semver@v1
+				        id: bump-semver
+				        with:
+				          current_version: ${{ steps.get-latest-tag.outputs.tag }}
+				          level: ${{ inputs.semverbump }}
+				
+				      - uses: actions-ecosystem/action-push-tag@v1
+				        with:
+				          tag: ${{ steps.bump-semver.outputs.new_version }}
+				          message: "${{ steps.bump-semver.outputs.new_version }}"
+				
+				  goreleaser:
+				    name: "Release"
+				    needs:
+				      - backend-tests
+				      - tag
+				    runs-on: ubuntu-latest
+				    steps:
+				      - uses: actions/checkout@v6
+				        with:
+				          fetch-depth: 0
+				      - run: git fetch --force --tags
+				      - uses: jdx/mise-action@v2
+				      - run: goreleaser release --clean
+				        env:
+				          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+				
+	.gitignore:  (type=file)
+		# If you prefer the allow list template instead of the deny list, see community template:
+		# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+		#
+		# Binaries for programs and plugins
+		*.exe
+		*.exe~
+		*.dll
+		*.so
+		*.dylib
+		
+		# Test binary, built with `go test -c`
+		*.test
+		
+		# Output of the go coverage tool, specifically when used with LiteIDE
+		*.out
+		
+		# Dependency directories (remove the comment below to include it)
+		# vendor/
+		
+		# Go workspace file
+		go.work
+		
+	.golangci.yaml:  (type=file)
+		version: "2"
+		linters:
+		  default: none
+		  enable:
+		    - asciicheck
+		    - bodyclose
+		    - depguard
+		    - dogsled
+		    - errcheck
+		    - errorlint
+		    - exhaustive
+		    - gochecknoinits
+		    - goconst
+		    - gocritic
+		    - gocyclo
+		    - goprintffuncname
+		    - govet
+		    - ineffassign
+		    - misspell
+		    - nakedret
+		    - revive
+		    - staticcheck
+		    - tagalign
+		    - testifylint
+		    - unconvert
+		    - unused
+		    - whitespace
+		  settings:
+		    depguard:
+		      rules:
+		        main:
+		          deny:
+		            - pkg: io/ioutil
+		              desc: |
+		                Deprecated: As of Go 1.16, the same functionality is now provided by
+		                package io or package os, and those implementations should be
+		                preferred in new code. See the specific function documentation for
+		                details.
+		            - pkg: github.com/pkg/errors
+		              desc: Should be replaced by standard lib errors package
+		    exhaustive:
+		      default-signifies-exhaustive: true
+		    goconst:
+		      min-len: 5
+		      min-occurrences: 5
+		    revive:
+		      confidence: 3
+		      severity: warning
+		    tagalign:
+		      order:
+		        - json
+		        - schema
+		        - yaml
+		        - yml
+		        - toml
+		        - validate
+		    testifylint:
+		      enable-all: true
+		  exclusions:
+		    generated: lax
+		    paths:
+		      - third_party$
+		      - builtin$
+		      - examples$
+		issues:
+		  fix: true
+		formatters:
+		  enable:
+		    - gofumpt
+		  exclusions:
+		    generated: lax
+		    paths:
+		      - third_party$
+		      - builtin$
+		      - examples$
+		  settings:
+		    gofumpt:
+		      extra-rules: false
+		
+	.goreleaser.yml:  (type=file)
+		version: 2
+		before:
+		  hooks:
+		    - go mod tidy
+		
+		# This is a library — no binaries to build or archives to publish.
+		builds:
+		  - skip: true
+		
+		release:
+		  mode: replace
+		
+		changelog:
+		  sort: asc
+		  groups:
+		    - title: Features
+		      regexp: '^.*?feat(\(\w+\))??!?:.+$'
+		      order: 0
+		    - title: Bug Fixes
+		      regexp: '^.*?fix(\(\w+\))??!?:.+$'
+		      order: 1
+		    - title: Documentation
+		      regexp: '^.*?docs(\(\w+\))??!?:.+$'
+		      order: 2
+		    - title: Other
+		      order: 999
+		  filters:
+		    exclude:
+		      - "^test:"
+		      - "^chore:"
+		      - "^ci:"
+		
+		#
+		#--------------------------------------------------------------------------------------------------
+		# Meta
+		#
+		# The lines beneath this are called `modelines`. See `:help modeline`
+		# Feel free to remove those if you don't want/use them.
+		# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+		# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+		
+	AGENTS.md:  (type=file)
+		# Agent Guide — pkg-test
+		
+		A new package
+		
+		## Tooling
+		
+		This repo uses [mise](https://mise.jdx.dev/) to pin developer tools (`go`, `golangci-lint`, `goreleaser`, `lefthook`). Run `mise install` once, then use the task aliases below.
+		
+		## Common tasks
+		
+		| Task                   | Purpose                                           |
+		| ---------------------- | ------------------------------------------------- |
+		| `mise run test`        | `go test ./...`                                   |
+		| `mise run coverage`    | Tests with `-race` + coverage profile             |
+		| `mise run lint`        | `golangci-lint run ./...`                         |
+		| `mise run fmt`         | `golangci-lint fmt` (applies gofumpt)             |
+		| `mise run tidy`        | `go mod tidy`                                     |
+		| `mise run check`       | `tidy` + `lint` + `test` (run this before a PR)   |
+		
+		## Conventions
+		
+		- **Commit messages** follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`…). The goreleaser changelog groups depend on this prefix.
+		- **Formatter** is gofumpt (configured through golangci-lint v2). Do not run `gofmt` separately.
+		- **Lint** must pass cleanly before merging; `mise run check` is the full gate.
+		- **Public API** changes require a `godoc` comment on every exported symbol.
+		
+		## Pre-commit hooks
+		
+		Lefthook runs `golangci-lint`, `gofumpt`, and `go mod tidy` on staged files. Install once per clone:
+		
+		```sh
+		lefthook install
+		```
+		
+	LICENSE:  (type=file)
+		MIT License
+		
+		Copyright (c) 2026-04-20, John Doe
+		
+		Permission is hereby granted, free of charge, to any person obtaining a copy
+		of this software and associated documentation files (the "Software"), to deal
+		in the Software without restriction, including without limitation the rights
+		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+		copies of the Software, and to permit persons to whom the Software is
+		furnished to do so, subject to the following conditions:
+		
+		The above copyright notice and this permission notice shall be included in all
+		copies or substantial portions of the Software.
+		
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+		LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+		SOFTWARE.
+		
+	README.md:  (type=file)
+		# pkg-test
+		
+		A new package
+		
+		[![Go Reference](https://pkg.go.dev/badge/github.com/username/project.svg)](https://pkg.go.dev/github.com/username/project)
+		[![CI](https://github.com/username/project/actions/workflows/pr.yml/badge.svg)](https://github.com/username/project/actions/workflows/pr.yml)
+		[![License](https://img.shields.io/github/license/username/project)](./LICENSE)
+		
+		## Install
+		
+		```bash
+		go get github.com/username/project
+		```
+		
+		## Usage
+		
+		TODO
+		
+	doc.go:  (type=file)
+		// Package pkgtest A new package
+		package pkgtest
+		
+	go.mod:  (type=file)
+		module github.com/username/project
+		
+		go 1.25
+		
+	lefthook.yml:  (type=file)
+		# https://lefthook.dev/
+		pre-commit:
+		  parallel: true
+		  jobs:
+		    - name: golangci-lint
+		      glob: "*.go"
+		      run: golangci-lint run --fix ./...
+		      stage_fixed: true
+		    - name: gofumpt
+		      glob: "*.go"
+		      run: golangci-lint fmt {staged_files}
+		      stage_fixed: true
+		    - name: go-mod-tidy
+		      glob: "go.{mod,sum}"
+		      run: go mod tidy
+		      stage_fixed: true
+		
+	mise.toml:  (type=file)
+		[tools]
+		go = "latest"
+		golangci-lint = "latest"
+		goreleaser = "latest"
+		lefthook = "latest"
+		
+		[env]
+		LOG_LEVEL = "debug"
+		
+		[tasks.test]
+		description = "Run all go tests"
+		run = "go test ./..."
+		
+		[tasks.coverage]
+		description = "Run tests with race detection and coverage"
+		run = "go test -race -coverprofile=coverage.out -covermode=atomic ./... -v -cover"
+		
+		[tasks.tidy]
+		description = "Run go mod tidy"
+		run = "go mod tidy"
+		
+		[tasks.lint]
+		description = "Run golangci-lint"
+		run = "golangci-lint run ./..."
+		
+		[tasks.fmt]
+		description = "Run golangci-lint fmt"
+		run = "golangci-lint fmt"
+		
+		[tasks.check]
+		description = "Run all checks for PRs (tidy, lint, test)"
+		run = [
+		    { task = "tidy" },
+		    { task = "lint" },
+		    { task = "test" },
+		]
+		
+	renovate.json:  (type=file)
+		{
+		    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+		    "extends": [
+		        "config:recommended"
+		    ],
+		    "postUpdateOptions": [
+		        "gomodTidy"
+		    ]
+		}
+		
+
