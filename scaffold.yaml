@@ -1,48 +1,46 @@
 # yaml-language-server: $schema=https://hay-kot.github.io/scaffold/schema.json
+metadata:
+  minimum_version: v0.6.1
 messages:
   pre: |
-    # Go Project Scaffold
+    # Go Package Scaffold
 
-    Generate boilerplate for a new go Package with minimal opinions
+    Generate boilerplate for a new Go library package.
 
   post: |
     # Get Started
 
     ```sh
     cd {{ .ProjectKebab }}
-    task pr
+    mise run check
     ```
+skip:
+  - "*mise.toml"
+
 questions:
   - name: "gomod"
-    group: "project"
+    group: "default"
     prompt:
-      message: "Go Module Path (eg. github.com/username/project)"
+      message: "Go Module Path"
+      description: "e.g. github.com/username/project"
   - name: "full_name"
-    group: "project"
+    group: "default"
     prompt:
-      message: "Developer's full name"
+      message: "Developers Name"
+      description: "For License and README"
     required: true
   - name: "description"
-    group: "project"
+    group: "default"
     prompt:
-      message: "Description of the project"
+      message: "Description"
+      description: "A short description of the package"
+      multi: true
     required: true
-  - name: "enable_renovate"
-    group: "options"
-    prompt:
-      confirm: "Enable Renovate?"
-      description: "Automatically update dependencies, via Renovate"
-      default: true
-  - name: "enable_release_drafter"
-    group: "options"
-    prompt:
-      confirm: "Enable Release Draft"
-      description: "Automatically draft release notes, via Release Drafter"
-      default: true
   - name: "open_source_license"
-    group: "license"
+    group: "default"
     prompt:
-      message: "License of the project"
+      message: "License"
+      description: "Choose a license for your project"
       default: "MIT license"
       options:
         - "MIT license"
@@ -51,13 +49,53 @@ questions:
         - "Apache Software License 2.0"
         - "GNU General Public License v3"
 
+  - name: "features_cicd"
+    group: "features"
+    prompt:
+      message: "CI/CD"
+      description: "Select CI/CD features to enable"
+      multi: true
+      default: ["Github Actions", "Renovate", "Goreleaser"]
+      options:
+        - "Github Actions"
+        - "Renovate"
+        - "Goreleaser"
+
+computed:
+  feature_gh_actions: '{{ has "Github Actions" .Scaffold.features_cicd }}'
+  feature_renovate: '{{ has "Renovate" .Scaffold.features_cicd }}'
+  feature_goreleaser: '{{ has "Goreleaser" .Scaffold.features_cicd }}'
+
+presets:
+  test:
+    Project: "pkg-test"
+    gomod: "github.com/username/project"
+    full_name: "John Doe"
+    description: "A new package"
+    open_source_license: "MIT license"
+    features_cicd:
+      - "Github Actions"
+      - "Renovate"
+      - "Goreleaser"
+
+delimiters:
+  # goreleaser configs and release workflows use Go templates themselves;
+  # override the scaffold delimiters so the two don't collide.
+  - glob: "*.goreleaser.yml"
+    left: "[["
+    right: "]]"
+  - glob: "**/workflows/publish.yml"
+    left: "[["
+    right: "]]"
+
 features:
-  - value: "{{ .Scaffold.enable_renovate }}"
+  - value: "{{ .Computed.feature_renovate }}"
     globs:
       - "**/renovate.json"
-  - value: "{{ .Scaffold.enable_release_drafter }}"
+  - value: "{{ .Computed.feature_gh_actions }}"
     globs:
-      - "**/*release-drafter.yml"
-
-skip:
-  - "*Taskfile.yml"
+      - "**/workflows/**.yml"
+  - value: "{{ .Computed.feature_goreleaser }}"
+    globs:
+      - "**/.goreleaser.yml"
+      - "**/workflows/publish.yml"

@@ -1,0 +1,53 @@
+name: Update Template Dependencies
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday at 9am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: jdx/mise-action@v2
+
+      - name: Update Go dependencies
+        run: mise run update:deps
+
+      - name: Update GitHub Action versions
+        run: mise run update:actions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update snapshot
+        run: mise run test:snapshot:update
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/update-template-deps
+          commit-message: "chore: update template dependencies"
+          title: "chore: update template dependencies"
+          body: |
+            Automated update of template dependencies:
+            - Go module dependencies (`go mod tidy`)
+            - GitHub Action versions (major version bumps)
+            - Regenerated snapshot
+          delete-branch: true
