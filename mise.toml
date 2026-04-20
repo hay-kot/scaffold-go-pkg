@@ -23,7 +23,7 @@ run = 'scaffold new --output-dir=":memory:" --preset="test" --no-prompt --snapsh
 description = "Render the test preset to /tmp and verify the package builds"
 run = '''
 rm -rf /tmp/scaffold-test/
-scaffold --log-level="debug" new --output-dir="/tmp/scaffold-test/" --preset="test" --no-prompt ./
+scaffold --log-level="debug" new --output-dir="/tmp/scaffold-test/" --preset="test" --no-prompt --run-hooks=always ./
 ls /tmp/scaffold-test/pkg-test/
 cd /tmp/scaffold-test/pkg-test && \
     go mod tidy && \

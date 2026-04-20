@@ -1,19 +1,19 @@
 [tools]
 go = "latest"
 golangci-lint = "latest"
+# [[- if .Computed.feature_goreleaser ]]
 goreleaser = "latest"
-"github:gotestyourself/gotestsum" = "latest"
+# [[- end ]]
+# [[- if .Computed.feature_lefthook ]]
+lefthook = "latest"
+# [[- end ]]
 
 [env]
 LOG_LEVEL = "debug"
 
 [tasks.test]
-description = "Run all go tests using gotestsum"
-run = "gotestsum ./..."
-
-[tasks."test:watch"]
-description = "Run all go tests in watch mode"
-run = "gotestsum --watch -- -v ./..."
+description = "Run all go tests"
+run = "go test ./..."
 
 [tasks.coverage]
 description = "Run tests with race detection and coverage"

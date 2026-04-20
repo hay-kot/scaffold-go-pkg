@@ -13,10 +13,10 @@ messages:
     ```sh
     cd {{ .ProjectKebab }}
     mise run check
+    {{- if .Computed.feature_lefthook }}
+    lefthook install
+    {{- end }}
     ```
-skip:
-  - "*mise.toml"
-
 questions:
   - name: "gomod"
     group: "default"
@@ -55,16 +55,18 @@ questions:
       message: "CI/CD"
       description: "Select CI/CD features to enable"
       multi: true
-      default: ["Github Actions", "Renovate", "Goreleaser"]
+      default: ["Github Actions", "Renovate", "Goreleaser", "Lefthook"]
       options:
         - "Github Actions"
         - "Renovate"
         - "Goreleaser"
+        - "Lefthook"
 
 computed:
   feature_gh_actions: '{{ has "Github Actions" .Scaffold.features_cicd }}'
   feature_renovate: '{{ has "Renovate" .Scaffold.features_cicd }}'
   feature_goreleaser: '{{ has "Goreleaser" .Scaffold.features_cicd }}'
+  feature_lefthook: '{{ has "Lefthook" .Scaffold.features_cicd }}'
 
 presets:
   test:
@@ -77,6 +79,7 @@ presets:
       - "Github Actions"
       - "Renovate"
       - "Goreleaser"
+      - "Lefthook"
 
 delimiters:
   # goreleaser configs and release workflows use Go templates themselves;
@@ -86,6 +89,12 @@ delimiters:
     right: "]]"
   - glob: "**/workflows/publish.yml"
     left: "[["
+    right: "]]"
+  # mise.toml needs to stay valid TOML even before rendering (mise scans
+  # the source tree during development). Using `# [[` / `]]` keeps the
+  # template directives inside TOML comments.
+  - glob: "**/mise.toml"
+    left: "# [["
     right: "]]"
 
 features:
@@ -99,3 +108,6 @@ features:
     globs:
       - "**/.goreleaser.yml"
       - "**/workflows/publish.yml"
+  - value: "{{ .Computed.feature_lefthook }}"
+    globs:
+      - "**/lefthook.yml"
